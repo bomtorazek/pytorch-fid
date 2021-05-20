@@ -33,7 +33,7 @@ class InceptionV3(nn.Module):
                  resize_input=True,
                  normalize_input=True,
                  requires_grad=False,
-                 use_fid_inception=True):
+                 use_fid_inception=True, args = None):
         """Build pretrained InceptionV3
 
         Parameters
@@ -75,9 +75,19 @@ class InceptionV3(nn.Module):
             'Last possible output block index is 3'
 
         self.blocks = nn.ModuleList()
+        self.args = args
 
         if use_fid_inception:
             inception = fid_inception_v3()
+            if args.num_classes != 1000:
+                inception.fc = nn.Linear(inception.fc.in_features, args.num_classes)
+            if args.model_path:
+                state_dict = torch.load(args.model_path)['state_dict']
+                keys= list(state_dict.keys())
+                for old_key in keys:
+                    new_key = old_key[9:]
+                    state_dict[new_key] = state_dict.pop(old_key)
+                inception.load_state_dict(state_dict)
         else:
             inception = _inception_v3(pretrained=True)
 
